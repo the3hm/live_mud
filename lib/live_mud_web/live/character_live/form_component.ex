@@ -2,6 +2,7 @@ defmodule LiveMudWeb.CharacterLive.FormComponent do
   @moduledoc """
   Handles creating and editing a character, scoped to the current user.
   """
+
   use LiveMudWeb, :live_component
 
   alias LiveMud.Characters
@@ -13,7 +14,7 @@ defmodule LiveMudWeb.CharacterLive.FormComponent do
     <div>
       <.header>
         {@title}
-        <:subtitle>Use this form to manage character records in your database.</:subtitle>
+        <:subtitle>Create or edit a character to enter the world of LiveMud.</:subtitle>
       </.header>
 
       <.simple_form
@@ -35,6 +36,15 @@ defmodule LiveMudWeb.CharacterLive.FormComponent do
   end
 
   @impl true
+  def update(%{character: nil} = assigns, socket) do
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign_new(:form, fn ->
+       to_form(Characters.change_character(assigns.current_user))
+     end)}
+  end
+
   def update(%{character: character} = assigns, socket) do
     {:ok,
      socket
@@ -45,20 +55,23 @@ defmodule LiveMudWeb.CharacterLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"character" => character_params}, socket) do
+  def handle_event("validate", %{"character" => params}, socket) do
     changeset =
-      Characters.change_character(socket.assigns.character, character_params)
+      case socket.assigns.character do
+        nil -> Characters.change_character(socket.assigns.current_user, params)
+        %{} -> Characters.change_character(socket.assigns.character, params)
+      end
 
-    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+    {:noreply, assign(socket, :form, to_form(changeset, action: :validate))}
   end
 
   @impl true
-  def handle_event("save", %{"character" => character_params}, socket) do
-    save_character(socket, socket.assigns.action, character_params)
+  def handle_event("save", %{"character" => params}, socket) do
+    save_character(socket, socket.assigns.action, params)
   end
 
-  defp save_character(socket, :edit, character_params) do
-    case Characters.update_character(socket.assigns.character, character_params) do
+  defp save_character(socket, :edit, params) do
+    case Characters.update_character(socket.assigns.character, params) do
       {:ok, character} ->
         notify_parent({:saved, character})
 
@@ -68,17 +81,12 @@ defmodule LiveMudWeb.CharacterLive.FormComponent do
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, :form, to_form(changeset))}
     end
   end
 
-  defp save_character(socket, :new, character_params) do
-    character_params =
-      character_params
-      |> Map.put("user_id", socket.assigns.current_user.id)
-      |> Map.put("room_id", World.get_starting_room_id())
-
-    case Characters.create_character(character_params) do
+  defp save_character(socket, :new, params) do
+    case Characters.create_character(socket.assigns.current_user, params) do
       {:ok, character} ->
         notify_parent({:saved, character})
 
@@ -88,7 +96,7 @@ defmodule LiveMudWeb.CharacterLive.FormComponent do
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, :form, to_form(changeset))}
     end
   end
 

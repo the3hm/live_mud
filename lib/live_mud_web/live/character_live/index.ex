@@ -1,7 +1,8 @@
 defmodule LiveMudWeb.CharacterLive.Index do
   @moduledoc """
-  Lists and manages characters for the logged-in user.
+  Displays a list of characters and allows creating/editing/deleting.
   """
+
   use LiveMudWeb, :live_view
 
   alias LiveMud.Characters
@@ -9,36 +10,36 @@ defmodule LiveMudWeb.CharacterLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    current_user = socket.assigns.current_user
-    characters = Characters.list_characters_by_user(current_user.id)
+    characters = Characters.list_characters_by_user(socket.assigns.current_user.id)
 
     {:ok,
      socket
-     |> assign(:current_user, current_user)
      |> stream(:characters, characters)}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-  end
+    case socket.assigns.live_action do
+      :edit ->
+        character = Characters.get_character!(params["id"])
 
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Character")
-    |> assign(:character, Characters.get_character!(id))
-  end
+        {:noreply,
+         socket
+         |> assign(:page_title, "Edit Character")
+         |> assign(:character, character)}
 
-  defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Character")
-    |> assign(:character, %Character{})
-  end
+      :new ->
+        {:noreply,
+         socket
+         |> assign(:page_title, "New Character")
+         |> assign(:character, %Character{})}
 
-  defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:page_title, "Listing Characters")
-    |> assign(:character, nil)
+      :index ->
+        {:noreply,
+         socket
+         |> assign(:page_title, "Listing Characters")
+         |> assign(:character, nil)}
+    end
   end
 
   @impl true
@@ -49,12 +50,8 @@ defmodule LiveMudWeb.CharacterLive.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     character = Characters.get_character!(id)
+    {:ok, _} = Characters.delete_character(character)
 
-    if character.user_id == socket.assigns.current_user.id do
-      {:ok, _} = Characters.delete_character(character)
-      {:noreply, stream_delete(socket, :characters, character)}
-    else
-      {:noreply, put_flash(socket, :error, "You can't delete this character.")}
-    end
+    {:noreply, stream_delete(socket, :characters, character)}
   end
 end

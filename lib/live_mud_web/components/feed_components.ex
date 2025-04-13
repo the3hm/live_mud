@@ -4,7 +4,6 @@ defmodule LiveMudWeb.FeedComponents do
   """
 
   use Phoenix.Component
-  import Timex
 
   def post_card(assigns) do
     ~H"""
@@ -36,6 +35,6 @@ defmodule LiveMudWeb.FeedComponents do
   end
 
   defp format_time(datetime) do
-    Timex.format_relative(datetime, Timex.now())
+    Timex.from_now(datetime)
   end
 end

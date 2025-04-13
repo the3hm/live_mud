@@ -8,8 +8,8 @@ defmodule LiveMud.Characters.Character do
 
   schema "characters" do
     field :name, :string
-    field :description, :string
     field :avatar, :string
+    field :description, :string
 
     belongs_to :user, LiveMud.Accounts.User
     belongs_to :room, LiveMud.World.Room

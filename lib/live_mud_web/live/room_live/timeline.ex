@@ -6,26 +6,31 @@ defmodule LiveMudWeb.RoomLive.Timeline do
   use LiveMudWeb, :live_view
 
   alias LiveMud.World
-  alias LiveMud.Characters
   alias LiveMud.Repo
-
   alias LiveMudWeb.FeedComponents
   import FeedComponents
 
   @impl true
   def mount(_params, _session, socket) do
-    character = socket.assigns.current_user.characters |> List.first()
+    case socket.assigns.current_user.characters do
+      [character | _] ->
+        if connected?(socket), do: Phoenix.PubSub.subscribe(LiveMud.PubSub, topic(character.room_id))
 
-    if connected?(socket), do: Phoenix.PubSub.subscribe(LiveMud.PubSub, topic(character.room_id))
+        posts = World.list_recent_posts(character.room_id)
 
-    posts = World.list_recent_posts(character.room_id)
+        {:ok,
+         socket
+         |> assign(:character, character)
+         |> assign(:room_id, character.room_id)
+         |> assign(:posts, posts)
+         |> assign(:message, "")}
 
-    {:ok,
-     socket
-     |> assign(:character, character)
-     |> assign(:room_id, character.room_id)
-     |> assign(:posts, posts)
-     |> assign(:message, "")}
+      [] ->
+        {:ok,
+         socket
+         |> put_flash(:error, "You must create a character before entering the room.")
+         |> redirect(to: ~p"/characters/new")}
+    end
   end
 
   @impl true
