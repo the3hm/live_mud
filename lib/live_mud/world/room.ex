@@ -16,6 +16,9 @@ defmodule LiveMud.World.Room do
 
     has_many :characters, LiveMud.Characters.Character
 
+    has_many :posts, LiveMud.World.Post
+
+
     timestamps(type: :utc_datetime_usec)
   end
 

@@ -1,0 +1,22 @@
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <h2 class="text-2xl font-bold mb-4 text-white">Room Feed</h2>
+
+  <div id="timeline" class="space-y-4">
+    <%= for post <- @posts do %>
+      <.post_card post={post} />
+    <% end %>
+  </div>
+
+  <form phx-submit="submit" class="mt-6">
+    <input type="text"
+           name="message"
+           value={@message}
+           placeholder="Say something..."
+           class="w-full p-2 rounded border border-zinc-700 bg-zinc-900 text-white"
+           autofocus />
+    <button type="submit"
+            class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-white">
+      Speak
+    </button>
+  </form>
+</div>

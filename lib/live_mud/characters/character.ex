@@ -14,6 +14,8 @@ defmodule LiveMud.Characters.Character do
     belongs_to :user, LiveMud.Accounts.User
     belongs_to :room, LiveMud.World.Room
 
+    has_many :posts, LiveMud.World.Post
+
     timestamps(type: :utc_datetime_usec)
   end
 
